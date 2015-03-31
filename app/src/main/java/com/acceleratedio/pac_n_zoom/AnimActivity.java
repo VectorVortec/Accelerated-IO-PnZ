@@ -396,11 +396,13 @@ public class AnimActivity extends Activity {
 		anmViews = drw_svg.DrawSVG(crt_ctx, orgnlImageView, rel_anm_lo);
 		initScl = svg_data.svg.initScl;
 
+		/*
 		try {
     	android.os.Debug.dumpHprofData("/sdcard/dump.hprof");
    	} catch (IOException e) {
    		e.printStackTrace();
-    }		
+    }	
+		*/
 
 		RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
 			RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
