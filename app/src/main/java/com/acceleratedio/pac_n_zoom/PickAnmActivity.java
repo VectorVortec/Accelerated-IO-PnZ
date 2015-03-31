@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2014 Accelerated I/O, Inc.
  *
+ * Code follow Picasso grid from 101apps
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -23,8 +25,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -45,7 +45,6 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -55,8 +54,7 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 
-import com.nostra13.universalimageloader.core.DisplayImageOptions;
-import com.nostra13.universalimageloader.core.ImageLoader;
+import com.squareup.picasso.Picasso;
 
 import de.greenrobot.event.EventBus;
 
@@ -88,8 +86,6 @@ public class PickAnmActivity extends Activity {
 	String[] top_dim;
 	public static String[] fil_nams;
 	public static String orgnl_tags;
-	DisplayImageOptions options;
-	private ImageLoader imageLoader;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -127,52 +123,14 @@ public class PickAnmActivity extends Activity {
 
 		if (req_str.equals("")) orgnl_tags = top_dim[1];	// Used when saving animation
   
-		imageLoader = ImageLoader.getInstance();
-   
-		// set options for image display
-		options = new DisplayImageOptions.Builder()
-			.showImageOnLoading(R.drawable.place_holder)
-			.showImageForEmptyUri(R.drawable.hand)
-			.showImageOnFail(R.drawable.big_problem)
-			.cacheInMemory(true)
-			.cacheOnDisk(true)
-			.considerExifParams(true)
-			.bitmapConfig(Bitmap.Config.RGB_565)
-			.build();
+		GridView gv = (GridView) findViewById(R.id.tnview);
+		gv.setAdapter(new ImageAdapter(this));
 
-    GridView gridview = (GridView) findViewById(R.id.tnview);
-		gridview.setAdapter(new ImageAdapter());
-
-		gridview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+		gv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-				imageLoader.clearMemoryCache();
-    		GridView gv = (GridView) findViewById(R.id.tnview);
-				int vw_nmbr = gv.getChildCount();
-				
-				for (int vw_mbr = 0; vw_mbr < vw_nmbr; vw_mbr += 1) {
-
-					View vw = gv.getChildAt(vw_mbr);
-
-					if (vw instanceof ImageView) GCView((ViewGroup) gv, (ImageView) vw);
-					else if (vw instanceof FrameLayout) {
-
-						FrameLayout vw_flo = (FrameLayout) gv.getChildAt(vw_mbr);
-						int chld_nmbr = vw_flo.getChildCount();
-
-						for (int chld_mbr = 0; chld_mbr < chld_nmbr; chld_mbr += 1) {
-
-							View chld = vw_flo.getChildAt(chld_mbr);
-
-							if (chld instanceof ImageView) GCView((ViewGroup) vw_flo, (ImageView) chld);
-						}
-					}
-				}
-			
-				gv = null;
-				System.gc();
 				Intent intent = new Intent(PickAnmActivity.this, com.acceleratedio.pac_n_zoom.AnimActivity.class);
 				intent.putExtra("position", position);
 				startActivity(intent);
@@ -198,19 +156,6 @@ public class PickAnmActivity extends Activity {
 			}
 		});
  	}
-
-	public void GCView(ViewGroup prnt_vw, ImageView img_vw) {
-		
-		// Garbage collect the bitmap
-		Drawable drawable = img_vw.getDrawable();
-
-		if (drawable instanceof BitmapDrawable) {
-			BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-			bitmapDrawable.getBitmap().recycle();
-		}
-
-		prnt_vw.removeView(img_vw);
-	}
 
 	public class MakePostRequest extends AsyncTask<String, Void, String> {
     @Override
@@ -264,12 +209,14 @@ public class PickAnmActivity extends Activity {
 	public class AlphaListUpdateEvent{ 
 	}
 
-	public class ViewHolder {
-		ImageView imageView;
-	}
-
 	// our custom adapter
 	private class ImageAdapter extends BaseAdapter {
+
+		private Context mContext;
+
+		public ImageAdapter(Context context) {
+			mContext = context;
+		}
 
 		@Override
 		public int getCount() {
@@ -288,30 +235,23 @@ public class PickAnmActivity extends Activity {
 
 		@Override
 		public View getView(int position, View convertView, ViewGroup parent) {
-			View view = convertView;
-			final ViewHolder gridViewImageHolder;
 
-			// check to see if we have a view
-			if (convertView == null) { // no view - so create a new one
-				
-				view = getLayoutInflater().inflate(R.layout.item_grid_image, parent, false);
-				gridViewImageHolder = new ViewHolder();
-				gridViewImageHolder.imageView = (ImageView) view.findViewById(R.id.image);
-				gridViewImageHolder.imageView.setMaxHeight(80);
-				gridViewImageHolder.imageView.setMaxWidth(80);
-				view.setTag(gridViewImageHolder);
-			} else { // we've got a view
-				gridViewImageHolder = (ViewHolder) view.getTag();
-			}
+			ImageView imageView;
 
-			gridViewImageHolder.imageView.setAdjustViewBounds(true);
+			if (convertView == null) imageView = new ImageView(mContext);
+			else imageView = (ImageView) convertView;
 
-			imageLoader.displayImage("https://meme.svgvortec.com/Droid/db_rd.php?"
-				+ fil_nams[position].replace('/', '?') + ".jpg"
-				,gridViewImageHolder.imageView
-				,options);
+    	// Trigger the download of the URL asynchronously into the image view.
+    	Picasso.with(mContext)
+        .load("https://meme.svgvortec.com/Droid/db_rd.php?"	+ 
+					fil_nams[position].replace('/', '?') + ".jpg")
+        .placeholder(R.drawable.place_holder)
+				.error(R.drawable.big_problem)
+				.noFade().resize(150, 150)
+				.centerCrop()
+				.into(imageView);
 
-			return view;
+			return imageView;
 		}
 	}
 }
