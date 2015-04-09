@@ -225,17 +225,24 @@ public class AnimActivity extends Activity {
 				for (int vw_mbr = 1; vw_mbr < vw_nmbr; vw_mbr += 1) {
 					
 					anim_view = anmViews.get(vw_mbr);
-					anim_view.getAnimation().cancel();
-					anim_view.setAnimation(null);
-					rel_anm_lo.removeView(anim_view); 
 
-					// Garbage collect the bitmap
-					Drawable drawable = anim_view.getDrawable();
+					if (anim_view != null) {
 
-					if (drawable instanceof BitmapDrawable) {
-						BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
-						Bitmap anim_bmp = bitmapDrawable.getBitmap();
-						anim_bmp.recycle();
+						Animation crt_anm = anim_view.getAnimation();
+
+						if (crt_anm != null) crt_anm.cancel();	
+						
+						anim_view.setAnimation(null);
+						rel_anm_lo.removeView(anim_view); 
+
+						// Garbage collect the bitmap
+						Drawable drawable = anim_view.getDrawable();
+
+						if (drawable instanceof BitmapDrawable) {
+							BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+							Bitmap anim_bmp = bitmapDrawable.getBitmap();
+							anim_bmp.recycle();
+						}
 					}
 				}
 

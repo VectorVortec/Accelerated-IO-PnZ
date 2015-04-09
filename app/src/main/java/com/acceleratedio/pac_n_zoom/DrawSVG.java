@@ -23,9 +23,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.TransitionDrawable;
-import android.view.View;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
@@ -73,7 +71,7 @@ public class DrawSVG {
 					bitmap = 
 						Bitmap.createBitmap(initBmp.getWidth(), initBmp.getHeight(), initBmp.getConfig());
 
-        	canvas = new Canvas(bitmap);
+					canvas = new Canvas(bitmap);
 					canvas.save(Canvas.MATRIX_SAVE_FLAG);
 					xfrmInit crt_sprt = getInitSpriteAttrib(sprt_id);
 					canvas.scale(crt_sprt.scl, crt_sprt.scl);
@@ -102,6 +100,15 @@ public class DrawSVG {
 						LoadSVG.path crt_pth = pths.get(pth_mbr);
 						final Path path = new Path();
 						final Paint paint = new Paint();
+						/* Debug
+						if (pth_mbr + 1 == pth_nmbr) {
+
+							String log_str = "Paths: pth_mbr = " +
+								String.valueOf(pth_mbr) + "; color = " + crt_pth.clr;
+
+							Log.d("DrawSVG", log_str);
+						}
+						*/
 						paint.setColor(Color.parseColor(crt_pth.clr));
 						paint.setAntiAlias(true);
 						paint.setStyle(Paint.Style.FILL_AND_STROKE);

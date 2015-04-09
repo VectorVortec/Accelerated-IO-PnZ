@@ -76,6 +76,8 @@ public class LoadSVG {
 		char[] svg_chr = new char[fil_len];
 		svg_chr = svg_file.toCharArray();
 		chr_idx = getStrIdx("<svg", svg_chr);
+		bgn_idx =	chr_idx; 
+		srch_len = getStrIdx(">", svg_chr);
 			
 		if (chr_idx >= fil_len) return(data);
 
@@ -87,17 +89,21 @@ public class LoadSVG {
 		svg.id = cpyToChr('"', svg_chr);
 		chr_idx = getStrIdx(" usrnam=\"", svg_chr);
 		svg.usrnam  = cpyToChr('"', svg_chr);
+		chr_idx = bgn_idx;
 		chr_idx = getStrIdx(" width=\"", svg_chr);
 		svg.width = Integer.parseInt(cpyToChr('"', svg_chr));
+		chr_idx = bgn_idx;
 		chr_idx = getStrIdx(" height=\"", svg_chr);
 		svg.height = Integer.parseInt(cpyToChr('"', svg_chr));
+		chr_idx = bgn_idx;
 		chr_idx = getStrIdx(" ordr=\"", svg_chr);
 		svg.svg_ordr = cpyToChr('"', svg_chr);
 		svg.ordr = new ArrayList<String>(Arrays.asList(svg.svg_ordr.split("\\s*,\\s*")));
 
 		// - Frames
+		srch_len = fil_len;
 		bgn_idx = getStrIdx("<Frame ", svg_chr);
-		srch_len = getStrIdx("<Xfrm ", svg_chr) - 9;
+		srch_len = getStrIdx("<Xfrm ", svg_chr) - 8;
 		chr_idx =	bgn_idx - 1; 
 		data.frm = new ArrayList<frame>();
 
@@ -124,7 +130,7 @@ public class LoadSVG {
 		}
 
 		// - Xfrms
-		bgn_idx = srch_len + 8;
+		bgn_idx = getStrIdx("<Xfrm", svg_chr);
 		srch_len = fil_len;
 		srch_len = getStrIdx("<g ", svg_chr) - 4;
 		chr_idx =	bgn_idx; 
@@ -169,6 +175,9 @@ public class LoadSVG {
 		bgn_idx = srch_len + 3;
 		srch_len = fil_len;
 		chr_idx =	bgn_idx;
+		srch_len = getStrIdx("</defs>", svg_chr);
+		int srch_symbl = srch_len; 
+		chr_idx = bgn_idx;
 
 		// Loop through the symbols
 		while (getNxtSymbl(svg_chr)) {
@@ -189,21 +198,34 @@ public class LoadSVG {
 				srch_len = fil_len;
 				crt_sym.g_id = getTagID("<g ", svg_chr);
 				crt_sym.pths = new ArrayList<path>();
-				chr_idx =	srch_len;
-				srch_len = fil_len;
+				srch_len = srch_symbl;
+				bgn_idx = chr_idx;
+				int srch_pth = getStrIdx("/symbol", svg_chr);
+				chr_idx =	bgn_idx;
 
 				// Loop through the paths
 				while (getNxtPath(svg_chr)) {
 					path crt_pth = new path();
-					chr_idx = getStrIdx("=\"", svg_chr);
-					crt_pth.id = cpyToChr('"', svg_chr);
-					chr_idx = getStrIdx("M", svg_chr);
-					crt_pth.pth = ld_svg_pth(svg_chr);
-					//crt_pth.pth = ld_pth(cpyToChr('z', svg_chr)); 
-					chr_idx = getStrIdx("#", svg_chr);
-					crt_pth.clr = "#FF" + cpyToChr(';', svg_chr).toUpperCase();
+					bgn_idx = chr_idx;
+					srch_len = getStrIdx(">", svg_chr);
+					chr_idx =	bgn_idx;
+
+					while ((chr_idx = getStrIdx("=\"", svg_chr)) < srch_len) {
+
+						if (svg_chr[chr_idx - 3] == 'd') {
+							if (svg_chr[chr_idx - 4] == 'i') crt_pth.id = cpyToChr('"', svg_chr);
+							else if (svg_chr[chr_idx - 4] == ' ') {
+								chr_idx++;
+								crt_pth.pth = ld_svg_pth(svg_chr);
+							}
+						} else if (svg_chr[chr_idx - 3] == 'e') {
+							chr_idx = getStrIdx("#", svg_chr);
+							crt_pth.clr = "#FF" + cpyToChr(';', svg_chr).toUpperCase();
+						}
+					}
+					
 					crt_sym.pths.add(crt_pth);
-					chr_idx += 15;
+					srch_len = srch_pth;
 				}
 				
 				data.symbl.add(crt_sym);
@@ -218,6 +240,7 @@ public class LoadSVG {
 		// - Animation scale
 	  srch_len = fil_len;
 		data.g_scl = 1;
+		chr_idx = srch_symbl; 
 
 		while (!getSVGSclID(svg_chr) && chr_idx < srch_len);
 			
@@ -251,6 +274,8 @@ public class LoadSVG {
 	{
 		while (true) {
 
+			if (chr_idx > srch_len) return false;	 	
+			
 			chr_idx = getStrIdx("<", svg_chr);
 			String trgt = "symbol";
 			bgn_idx	= chr_idx;
@@ -315,6 +340,8 @@ public class LoadSVG {
 		int trgt_idx;
 
 		while (true) {
+
+			if (chr_idx >= srch_len) return chr_idx;
 
 			while (svg_chr[chr_idx++]	!= ltr_0) {
 				if (chr_idx >= srch_len) return chr_idx;
