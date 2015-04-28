@@ -345,7 +345,7 @@ public class AnimActivity extends Activity {
 			String httpAddrs = "https://meme.svgvortec.com/Droid/db_rd.php?";
 			animFileName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".svg";
 			httpAddrs += animFileName; 
-			animFileName = animFileName.substring(animFileName.indexOf('?') + 1);
+			animFileName = PickAnmActivity.fil_nams[position];
 			BufferedReader inStream = null;
 
 			try {
