@@ -76,7 +76,7 @@ public class DrawSVG {
 					xfrmInit crt_sprt = getInitSpriteAttrib(sprt_id);
 					canvas.scale(crt_sprt.scl, crt_sprt.scl);
 					initScl[sprt_mbr] = crt_sprt.scl;
-					canvas.translate(crt_sprt.trans[0], crt_sprt.trans[1]);
+					canvas.translate(0, 0);
 				} else {
 					// The symbol needs to be drawn; a new view	is used
 					bitmap = getCreatBmp(rel_anm_lo);
@@ -87,7 +87,7 @@ public class DrawSVG {
 					xfrmInit crt_sprt = getInitSpriteAttrib(sprt_id);
 					canvas.scale(crt_sprt.scl, crt_sprt.scl);
 					initScl[sprt_mbr] = crt_sprt.scl;
-					canvas.translate(crt_sprt.trans[0], crt_sprt.trans[1]);
+					canvas.translate(0, 0);
 
 					// - Draw the bitmap
 					LoadSVG.symbol crt_sym = data.symbl.get(sym_mbr);

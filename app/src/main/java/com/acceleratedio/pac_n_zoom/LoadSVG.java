@@ -1,7 +1,14 @@
 package com.acceleratedio.pac_n_zoom;
 
+import android.media.AudioManager;
+import android.media.SoundPool;
+import android.os.Environment;
+import android.util.Base64;
 import android.util.Log;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import static java.util.Arrays.copyOfRange;
@@ -16,8 +23,11 @@ public class LoadSVG {
 	int srch_len;
 	int chr_idx;
 	String svg_fil;
+	String symbl_tag;
+	public SoundPool mSoundPool = null;
 	
 	static class SVGData {
+		int[] soundId;
 		float g_scl;
 		viewPort svg;
 		ArrayList<frame> frm = new ArrayList<frame>();
@@ -56,6 +66,7 @@ public class LoadSVG {
 	static class symbol {
     String sym_id; // e.g., id="g2_sprt"
 		String g_id; // e.g., id="earth7tan.1741_sel.svg"
+		String aud_id;
 		ArrayList<path> pths = new ArrayList<path>();
 	}
 
@@ -84,6 +95,7 @@ public class LoadSVG {
 		// - Viewport
 		chr_idx = getStrIdx(" id=\"", svg_chr);
 		data = new SVGData();
+		data.soundId = new int[15];
 		data.svg = new viewPort();
 		viewPort svg = data.svg;
 		svg.id = cpyToChr('"', svg_chr);
@@ -203,32 +215,60 @@ public class LoadSVG {
 				int srch_pth = getStrIdx("/symbol", svg_chr);
 				chr_idx =	bgn_idx;
 
-				// Loop through the paths
-				while (getNxtPath(svg_chr)) {
-					path crt_pth = new path();
+				switch (getNxtAP(svg_chr)) {
+				case "audio":
 					bgn_idx = chr_idx;
 					srch_len = getStrIdx(">", svg_chr);
 					chr_idx =	bgn_idx;
+					String aud_src = null;
 
 					while ((chr_idx = getStrIdx("=\"", svg_chr)) < srch_len) {
 
-						if (svg_chr[chr_idx - 3] == 'd') {
-							if (svg_chr[chr_idx - 4] == 'i') crt_pth.id = cpyToChr('"', svg_chr);
-							else if (svg_chr[chr_idx - 4] == ' ') {
-								chr_idx++;
-								crt_pth.pth = ld_svg_pth(svg_chr);
-							}
-						} else if (svg_chr[chr_idx - 3] == 'e') {
-							chr_idx = getStrIdx("#", svg_chr);
-							crt_pth.clr = "#FF" + cpyToChr(';', svg_chr).toUpperCase();
+						if (svg_chr[chr_idx - 3] == 'd') crt_sym.aud_id = cpyToChr('"', svg_chr);
+						else if (svg_chr[chr_idx - 3] == 'c') {
+							chr_idx += 22; 
+							aud_src = cpyToChr('"', svg_chr);
 						}
 					}
-					
-					crt_sym.pths.add(crt_pth);
-					srch_len = srch_pth;
+
+					if (aud_src != null && !aud_src.equals("")) {
+						
+						byte[] aud_data = Base64.decode(aud_src, Base64.DEFAULT);
+						writeAudFile(aud_data, crt_sym.aud_id, data.soundId);
+						
+					}
+
+					break;
+
+				case "path":
+					// Loop through the paths
+					do {
+						path crt_pth = new path();
+						bgn_idx = chr_idx;
+						srch_len = getStrIdx(">", svg_chr);
+						chr_idx =	bgn_idx;
+
+						while ((chr_idx = getStrIdx("=\"", svg_chr)) < srch_len) {
+
+							if (svg_chr[chr_idx - 3] == 'd') {
+								if (svg_chr[chr_idx - 4] == 'i') crt_pth.id = cpyToChr('"', svg_chr);
+								else if (svg_chr[chr_idx - 4] == ' ') {
+									chr_idx++;
+									crt_pth.pth = ld_svg_pth(svg_chr);
+								}
+							} else if (svg_chr[chr_idx - 3] == 'e') {
+								chr_idx = getStrIdx("#", svg_chr);
+								crt_pth.clr = "#FF" + cpyToChr(';', svg_chr).toUpperCase();
+							}
+						}
+						
+						crt_sym.pths.add(crt_pth);
+						srch_len = srch_pth;
+					} while (getNxtPath(svg_chr));
 				}
 				
 				data.symbl.add(crt_sym);
+				srch_len = fil_len;
 
 			} else {
 
@@ -258,9 +298,48 @@ public class LoadSVG {
 			}
 		}
 
+		// - Loop through the xfrms 
+		int xfm_nmbr = data.xfm.size();
+		
+		for (int xfm_mbr = 0; xfm_mbr < xfm_nmbr; xfm_mbr += 1) {
+
+			xfrm crt_xfm = data.xfm.get(xfm_mbr);
+			crt_xfm.scl_bgn *= data.g_scl;
+			crt_xfm.scl_end *= data.g_scl;
+			data.xfm.set(xfm_mbr, crt_xfm);
+		}
+
 		Log.d("LoadSVG", "End of Parsing");
 		return(data);
   }
+
+	public void writeAudFile(byte[] data, String fileName, int[] soundId) {
+		File sdCard = Environment.getExternalStorageDirectory();
+		String dirPth = sdCard.getAbsolutePath() + "/acceleratedio/pacnzoom";
+		File dir = new File(dirPth);
+		dir.mkdirs();
+
+		try {
+			String filPth = "/" + fileName + ".mp3";
+			File file = new File(dir, filPth);
+			FileOutputStream fStrm = new FileOutputStream(file);
+			fStrm.write(data);
+			fStrm.close();
+			int sym_mbr = Integer.parseInt(fileName.substring(1, fileName.indexOf('_'))) - 2;
+
+			if (mSoundPool == null) mSoundPool = new SoundPool(15, AudioManager.STREAM_MUSIC, 0);
+		
+			soundId[sym_mbr] = mSoundPool.load(dirPth + filPth, 1);
+		} catch (Exception e) {
+			 // TODO Auto-generated catch block
+			 e.printStackTrace();
+		}
+	}
+
+	public SoundPool getMSoundPool()
+	{
+		return(mSoundPool); 
+	}
 
 	private boolean getSVGSclID(char[] svg_chr)
 	{
@@ -303,6 +382,35 @@ public class LoadSVG {
 			if (trgt_idx == 6) return true;	
 		}
   }
+
+	private String getNxtAP(char[] svg_chr)
+	{
+		chr_idx = getStrIdx("<", svg_chr);
+		int chr_len;
+
+		switch (svg_chr[chr_idx++]) { 
+		
+		case 'a': 
+			symbl_tag = "audio";
+			chr_len = 5;
+			break;
+			
+		case 'p': 
+			symbl_tag = "path";
+			chr_len = 4;
+			break;
+
+		default:
+			return "";
+		}
+
+		for (int trgt_idx = 1; trgt_idx < chr_len; trgt_idx++) {
+
+			if (symbl_tag.charAt(trgt_idx) != svg_chr[chr_idx++]) return "";
+		}	
+
+		return symbl_tag;
+	}
 
 	private boolean getNxtPath(char[] svg_chr)
 	{

@@ -36,11 +36,15 @@ import android.graphics.Rect;
 import android.graphics.drawable.AnimationDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.media.ThumbnailUtils;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -107,14 +111,11 @@ public class AnimActivity extends Activity {
 	AnimationDrawable animatn = new AnimationDrawable();
 	public static ProgressDialog progress;
 	private Context crt_ctx;
-	private DrawSVG draw_view = null;
 	Handler	DrwHandler;
 	ImageView orgnlImageView;
 	public static String animFileName;
 	private static int orgnl_iv_wdth;			
 	private static int orgnl_iv_hght;			
-	private static int bgn_hrz;			
-	private static int bgn_vrt;			
 	private static int bgn_top;			
 	private static int bgn_lft;
 	private static int msr_wdth;
@@ -123,8 +124,13 @@ public class AnimActivity extends Activity {
 	private ScaleGestureDetector scaleGestureDetector;
 	private static boolean flgInScale = false;
 	public static float scaleFactor = 1;
+	private float aPosX;
+	private float aPosY;
+	private float bgn_hrz;			
+	private float bgn_vrt;			
 	private Button sav_anm_btn;	// The button that saves the animation
 	private int onClickFlg = 0;
+	private LoadSVG loadSVG; 
 
 	//animation step
 	private static int iMaxAnimationStep = 120;
@@ -150,7 +156,6 @@ public class AnimActivity extends Activity {
 		orgnlImageView.setImageBitmap(bmp);
 		orgnl_iv_wdth = bmp.getWidth();
 		orgnl_iv_hght = bmp.getHeight();
-
 		final RelativeLayout rel_anm_lo = (RelativeLayout) findViewById(R.id.activity_anm_lo);
 		scaleGestureDetector = new ScaleGestureDetector(this, new simpleOnScaleGestureListener());
 
@@ -167,13 +172,15 @@ public class AnimActivity extends Activity {
 
 				int end_hrz;
 				int end_vrt;
-
+				final int pointerIndex;
+				
 				switch (event.getAction()) {
 				
 				case MotionEvent.ACTION_DOWN:
-
-					bgn_hrz = (int) event.getX();
-					bgn_vrt = (int) event.getY();
+             
+					pointerIndex = MotionEventCompat.getActionIndex(event);
+					bgn_hrz = (int) MotionEventCompat.getX(event, pointerIndex); 
+					bgn_vrt = (int) MotionEventCompat.getY(event, pointerIndex);
 
 					String log_str = "Beginning coordinates: Horz = " +
 						String.valueOf(bgn_hrz) + "; Vert = " + String.valueOf(bgn_vrt);
@@ -182,26 +189,37 @@ public class AnimActivity extends Activity {
 					orlp = (RelativeLayout.LayoutParams) orgnlImageView.getLayoutParams();
 					bgn_top = (int) orlp.topMargin;
 					bgn_lft = (int) orlp.leftMargin;
+     
+					// To prevent an initial jump of the magnifier, aposX and aPosY must
+					// have the values from the magnifier frame
+     			if (aPosX == 0) aPosX = orgnlImageView.getX();
+      		if (aPosY == 0) aPosY = orgnlImageView.getY();
 					break;
 
 				case MotionEvent.ACTION_MOVE:
-				
-					orlp.topMargin = bgn_top + (int) event.getY() - bgn_vrt; 
-					orlp.bottomMargin = -450;
-					orlp.leftMargin = bgn_lft + (int) event.getX() - bgn_hrz;
-					orlp.rightMargin = -450;
-					orgnlImageView.setLayoutParams(orlp);
+
+					pointerIndex = MotionEventCompat.getActionIndex(event); 
+				 	float crt_hrz = MotionEventCompat.getX(event, pointerIndex);
+				 	float crt_vrt = MotionEventCompat.getY(event, pointerIndex);
+					final float dx = crt_hrz - bgn_hrz;
+					final float dy = crt_vrt - bgn_vrt;
+					aPosX += dx;
+					aPosY += dy;
+					orgnlImageView.setX(aPosX);
+					orgnlImageView.setY(aPosY);
+
+					log_str = "Current Position: Horz = " +
+						String.valueOf(crt_hrz) + "; Vert = " + String.valueOf(crt_vrt);
+
+					Log.d("OnTouchListener", log_str);
+					
 					break;
 
 				case MotionEvent.ACTION_UP:
-
-					end_hrz = (int) event.getX();
-					end_vrt = (int) event.getY();
-
-					log_str = "Amount moved: Horz = " +
-						String.valueOf(end_hrz - bgn_hrz) + "; Vert = " + String.valueOf(end_vrt - bgn_vrt);
-
-					Log.d("OnTouchListener", log_str);
+        
+					pointerIndex = MotionEventCompat.getActionIndex(event); 
+					end_hrz = (int) MotionEventCompat.getX(event, pointerIndex);
+					end_vrt = (int) MotionEventCompat.getY(event, pointerIndex);
 				}
 
 				rel_anm_lo.invalidate();
@@ -312,13 +330,16 @@ public class AnimActivity extends Activity {
 		public boolean onScale(ScaleGestureDetector detector) {
 			Log.d("ScaleListener", "onScale");
 			scaleFactor *= detector.getScaleFactor();
-			scaleFactor = (scaleFactor < 1 ? 1 : scaleFactor); // prevent our view from becoming too small //
+
+			 // prevent our view from becoming too small //
+			scaleFactor = (scaleFactor < 0.3 ? 0.3f : scaleFactor);
 			
 			// Change precision to help with jitter when user just rests their fingers //
 			scaleFactor = ((float)((int)(scaleFactor * 100))) / 100; 
 			
 			orgnlImageView.setScaleX(scaleFactor);
 			orgnlImageView.setScaleY(scaleFactor);
+			orgnlImageView.invalidate();
 			return true;
 		}
 
@@ -395,10 +416,14 @@ public class AnimActivity extends Activity {
 	private void anim_svg(String svg_fil) {
 
 		Toast.makeText(this, "Parsing and Drawing Animation", Toast.LENGTH_SHORT).show();	
-		LoadSVG loadSVG = new LoadSVG();
+		loadSVG = new LoadSVG();
 		svg_data = loadSVG.LoadSVG(svg_fil);
 		Log.d("anim_svg", "Return from LoadSVG");
 		RelativeLayout rel_anm_lo = (RelativeLayout) findViewById(R.id.activity_anm_lo);
+
+		RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
+			RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+
 		DrawSVG drw_svg = new DrawSVG();
 		anmViews = drw_svg.DrawSVG(crt_ctx, orgnlImageView, rel_anm_lo);
 		initScl = svg_data.svg.initScl;
@@ -411,11 +436,6 @@ public class AnimActivity extends Activity {
     }	
 		*/
 
-		RelativeLayout.LayoutParams rlp = new RelativeLayout.LayoutParams(
-			RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-		
-		Log.d("dsply_svg", "rlp is set");
-
 		// - Loop through the views
 		int vw_nmbr = anmViews.size();
 
@@ -425,6 +445,7 @@ public class AnimActivity extends Activity {
 			anim_view.setLayoutParams(rlp);
 			anim_view.setBackgroundColor(Color.TRANSPARENT);
 			rel_anm_lo.addView(anim_view);
+			disableClipOnParents(anim_view);
 		}
 
 		setContentView(rel_anm_lo);
@@ -451,8 +472,8 @@ public class AnimActivity extends Activity {
 			if (crt_pnt[1] > max_y) max_y = crt_pnt[1];
 		}
 
-		float x_dif = (float) max_x / orgnl_iv_wdth;
-		float y_dif = (float) max_y / orgnl_iv_hght;
+		float x_dif = (float) (max_x - min_x) / orgnl_iv_wdth;
+		float y_dif = (float) (max_y - min_y) / orgnl_iv_hght;
 		float crt_scl;
 		float ivWdth;
 		float ivHght;
@@ -481,6 +502,17 @@ public class AnimActivity extends Activity {
 			path.lineTo(x_scl, y_scl);
 		}
   }
+
+	public void disableClipOnParents(View v) {
+		if (v.getParent() == null) return;
+
+		if (v instanceof ViewGroup) {
+			((ViewGroup) v).setClipChildren(false);
+			((ViewGroup) v).setClipToPadding(false);
+		}
+
+		if (v.getParent() instanceof View) disableClipOnParents((View) v.getParent());
+	}
 
 	private void mainAnmLoop() {
 		
@@ -513,63 +545,86 @@ public class AnimActivity extends Activity {
 
 		for (int sprt_mbr = 0; sprt_mbr < sprt_nmbr; sprt_mbr += 1) {
 
-			String sprt_id = sprt_ordr.get(sprt_mbr);  
-			anim_view = anmViews.get(sprt_mbr);
-			
-			if (crt_frm_ordr.indexOf(sprt_id) >= 0) {
+			String sprt_id = sprt_ordr.get(sprt_mbr);
+			int sym_mbr = Integer.parseInt(sprt_id.substring(1, sprt_id.indexOf('_'))) - 2;
 
-				anim_view.setAlpha(1f);
-				int xfm_idx = crt_frm.xfm_idx[frm_sprt_mbr++];
+			if (sym_mbr >= 0) { // not g1 which is not loaded
+
+				LoadSVG.symbol crt_sym = svg_data.symbl.get(sym_mbr);
 				
-				if (xfm_idx >= 0) { // An animation tag is present
+				if (crt_frm_ordr.indexOf(sprt_id) >= 0) { // Sprite is present
 
-					anmSet = new AnimationSet(false); 
-					LoadSVG.xfrm crt_xfm = svg_data.xfm.get(xfm_idx);
-					ArrayList<Integer[]> pnts = crt_xfm.mov_path;
-					int init_scl = (int) (initScl[sprt_mbr] * 100);
-					
-					if (pnts.size() > 0) {
+					if (crt_sym.aud_id != null && !crt_sym.aud_id.equals("")) { // The sprite is audio
 
-						final Path path = new Path();
-						ld_scl_pth_pnts(pnts, path);
-						PathAnimation pthAnm = new PathAnimation(path);
-						pthAnm.setDuration(crt_dur);
-						pthAnm.setInterpolator(new LinearInterpolator());
-						pthAnm.setFillAfter(true); // Needed to keep the result of the animation
-						anmSet.addAnimation(pthAnm); 
+						SoundPool mSoundPool = loadSVG.getMSoundPool();
+						int streamId = mSoundPool.play(svg_data.soundId[sym_mbr], 1.0f, 1.0f, 1, 0, 1.0f);
+						mSoundPool.setLoop(streamId, -1);
+					} else { // The sprite is graphic
+						anim_view = anmViews.get(sprt_mbr);
+						anim_view.setAlpha(1f);
+						int xfm_idx = crt_frm.xfm_idx[frm_sprt_mbr];
+						
+						if (xfm_idx >= 0) { // An animation tag is present
+
+							anmSet = new AnimationSet(false); 
+							LoadSVG.xfrm crt_xfm = svg_data.xfm.get(xfm_idx);
+							ArrayList<Integer[]> pnts = crt_xfm.mov_path;
+							int init_scl = (int) (initScl[sprt_mbr] * 100);
+							
+							if (pnts.size() > 0) {
+
+								final Path path = new Path();
+								ld_scl_pth_pnts(pnts, path);
+								PathAnimation pthAnm = new PathAnimation(path);
+								pthAnm.setDuration(crt_dur);
+								pthAnm.setInterpolator(new LinearInterpolator());
+								pthAnm.setFillAfter(true); // Needed to keep the result of the animation
+								anmSet.addAnimation(pthAnm); 
+							}
+
+							if (crt_xfm.scl_bgn != init_scl) {
+
+								float crt_scl = crt_xfm.scl_bgn / init_scl;
+								float end_scl = crt_scl; 
+
+								if (crt_xfm.scl_end != crt_xfm.scl_bgn) end_scl = crt_xfm.scl_end / init_scl;
+
+								ScaleAnimation sclAnm = new ScaleAnimation(crt_scl, end_scl, crt_scl, end_scl, 
+									Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+
+								sclAnm.setDuration(crt_dur);
+								anmSet.addAnimation(sclAnm); 
+							}
+
+							if (crt_xfm.rot_bgn != 0) {
+							
+								float crt_rot = crt_xfm.rot_bgn;
+								float end_rot = crt_rot; 
+
+								if (crt_xfm.rot_end != crt_xfm.rot_bgn) end_rot = crt_xfm.rot_end;
+
+								RotateAnimation rotAnm = new RotateAnimation(crt_rot, end_rot, 
+									Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f); 
+
+								rotAnm.setDuration(crt_dur);
+								anmSet.addAnimation(rotAnm);
+							}
+
+							anim_view.startAnimation(anmSet); //start animation
+						}
 					}
-
-					if (crt_xfm.scl_bgn != init_scl) {
-
-						float crt_scl = crt_xfm.scl_bgn / init_scl;
-						float end_scl = crt_scl; 
-
-						if (crt_xfm.scl_end != crt_xfm.scl_bgn) end_scl = crt_xfm.scl_end / init_scl;
-
-						ScaleAnimation sclAnm = new ScaleAnimation(crt_scl, end_scl, crt_scl, end_scl, 
-							Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
-
-						sclAnm.setDuration(crt_dur);
-						anmSet.addAnimation(sclAnm); 
+						
+					frm_sprt_mbr++;
+				} else { // The sprite is not present
+					if (!(crt_sym.aud_id != null && !crt_sym.aud_id.equals(""))) { // The sprite is graphic
+						anim_view = anmViews.get(sprt_mbr);
+						anim_view.setAlpha(0f);
 					}
-
-					if (crt_xfm.rot_bgn != 0) {
-					
-						float crt_rot = crt_xfm.rot_bgn;
-						float end_rot = crt_rot; 
-
-						if (crt_xfm.rot_end != crt_xfm.rot_bgn) end_rot = crt_xfm.rot_end;
-
-						RotateAnimation rotAnm = new RotateAnimation(crt_rot, end_rot, 
-							Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f); 
-
-						rotAnm.setDuration(crt_dur);
-						anmSet.addAnimation(rotAnm);
-					}
-
-					anim_view.startAnimation(anmSet); //start animation
 				}
-			} else anim_view.setAlpha(0f);
+			} else { // g1
+				
+				if (crt_frm_ordr.indexOf(sprt_id) >= 0) frm_sprt_mbr++;
+			}
 		}
 		
 		waitDur(crt_dur);
