@@ -22,4 +22,17 @@
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true"/>
 
+    <Button
+        android:id="@+id/vvid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="15dp"
+        android:text="View Videos"
+        android:onClick="somthing" />
+
+
 </RelativeLayout>
+

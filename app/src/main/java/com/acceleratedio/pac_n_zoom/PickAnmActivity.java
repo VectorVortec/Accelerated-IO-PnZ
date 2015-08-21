@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Accelerated I/O, Inc.
+ * Copyright (C) 2015 Accelerated I/O, Inc.
  *
  * Code follow Picasso grid from 101apps
  *
@@ -81,6 +81,7 @@ public class PickAnmActivity extends Activity {
  	private String LOG_TAG = "PickAnmActivity";
 	private String url = "https://meme.svgvortec.com/Droid/snd_req_tns.php";
 	public static String req_str;
+    public static String mod_str;
 	EditText searchEditText;
 	public static ProgressDialog progress;
 	String[] top_dim;
@@ -95,13 +96,14 @@ public class PickAnmActivity extends Activity {
 		progress = ProgressDialog.show(this, "Loading the matching animations", "dialog message", true);
 		EventBus.getDefault().register(this);
 		req_str = getIntent().getExtras().getString("requestString").trim();
+        mod_str = getIntent().getExtras().getString("mode").trim();
 		MakePostRequest get_tags = new MakePostRequest();
-	  get_tags.execute(req_str);	
+    	get_tags.execute(req_str);
 		searchEditText = (EditText) findViewById(R.id.ed_tags);
 
 		searchEditText.setOnClickListener(new View.OnClickListener() {
 
-			public void onClick(View vw) {
+		public void onClick(View vw) {
 
 				Intent intent = 
 					new Intent(PickAnmActivity.this, com.acceleratedio.pac_n_zoom.FindTagsActivity.class);
@@ -111,10 +113,10 @@ public class PickAnmActivity extends Activity {
 				startActivity(intent);
 			}
 		});
-	}	
+	}
 
 	private void dsply_thumbnails(String tags) {
-  	// tags is a string that holds a 3 dimension array with a different delimiter
+		// tags is a string that holds a 3 dimension array with a different delimiter
 		// for each dimension. The most significant dimension is delimited with '|'.
 		// The second dimension is delimited with a comma. The least dimension 
 		// significant is '/' for [0][] and ' ' for [1][].
@@ -122,7 +124,7 @@ public class PickAnmActivity extends Activity {
 		fil_nams = top_dim[0].split("\\,");
 
 		if (req_str.equals("")) orgnl_tags = top_dim[1];	// Used when saving animation
-  
+
 		GridView gv = (GridView) findViewById(R.id.tnview);
 		gv.setAdapter(new ImageAdapter(this));
 
@@ -131,9 +133,15 @@ public class PickAnmActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-				Intent intent = new Intent(PickAnmActivity.this, com.acceleratedio.pac_n_zoom.AnimActivity.class);
-				intent.putExtra("position", position);
-				startActivity(intent);
+				if (mod_str == "animation") {
+					Intent intent = new Intent(PickAnmActivity.this, com.acceleratedio.pac_n_zoom.AnimActivity.class);
+					intent.putExtra("position", position);
+					startActivity(intent);
+				} else{
+					Intent intent = new Intent(PickAnmActivity.this, com.acceleratedio.pac_n_zoom.ViewVideos.class);
+					intent.putExtra("position", position);
+					startActivity(intent);
+				}
 			}
 		});
 
@@ -157,18 +165,19 @@ public class PickAnmActivity extends Activity {
 		});
  	}
 
-	public class MakePostRequest extends AsyncTask<String, Void, String> {
+  public class MakePostRequest extends AsyncTask<String, Void, String> {
     @Override
     protected String doInBackground(String... urls) {
       String response = "";
 			DefaultHttpClient httpClient = new DefaultHttpClient();
 			HttpPost httpPost = new HttpPost("https://meme.svgvortec.com/Droid/snd_req_tns.php");
-			List<NameValuePair> nameValuePair = new ArrayList<NameValuePair>(3);
+			List<NameValuePair> nameValuePair = new ArrayList<NameValuePair>(4);
 			nameValuePair.add(new BasicNameValuePair("username", "george.washington@wh.gov"));
 			nameValuePair.add(new BasicNameValuePair("password", "ListenToMe"));
 			nameValuePair.add(new BasicNameValuePair("tags", req_str));
+			nameValuePair.add(new BasicNameValuePair("mode", mod_str));
 
-			// Encoding data
+      // Encoding data
 			try {
 				httpPost.setEntity(new UrlEncodedFormEntity(nameValuePair));
 			} catch (UnsupportedEncodingException e) {
@@ -198,7 +207,7 @@ public class PickAnmActivity extends Activity {
 
 		protected void onPostExecute(String response) {
 			super.onPostExecute(response);
-     	dsply_thumbnails(response);
+     	    dsply_thumbnails(response);
 		}
 	}
 	
