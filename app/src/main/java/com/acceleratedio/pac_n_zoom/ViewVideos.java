@@ -19,13 +19,17 @@ import android.content.Intent;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -68,43 +72,49 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
   public class MakePostRequest extends AsyncTask<String, Void, String> {
     @Override
     protected String doInBackground(String... urls) {
-      String response = "";
+			String result = "fail";
 			int position = getIntent().getIntExtra("position", -1);
 			String vidName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".mp4";
+			String httpAddrs = "https://meme.svgvortec.com/Droid/db_rd.php?";
+			httpAddrs += vidName; 
+			BufferedReader inStream = null;
 
-			DefaultHttpClient httpClient = new DefaultHttpClient();
-			HttpPost httpPost = new HttpPost("https://meme.svgvortec.com/Droid/snd_req_tns.php");
-			List<NameValuePair> nameValuePair = new ArrayList<NameValuePair>(3);
-			nameValuePair.add(new BasicNameValuePair("username", "george.washington@wh.gov"));
-			nameValuePair.add(new BasicNameValuePair("password", "ListenToMe"));
-			nameValuePair.add(new BasicNameValuePair("tags", vidName));
-
-      // Encoding data
 			try {
-				httpPost.setEntity(new UrlEncodedFormEntity(nameValuePair));
-			} catch (UnsupportedEncodingException e) {
-				// log exception
+				HttpClient httpClient = new DefaultHttpClient();
+				HttpGet httpRequest = new HttpGet(httpAddrs);
+				HttpResponse response = httpClient.execute(httpRequest);
+
+				inStream = new BufferedReader(
+						new InputStreamReader(
+								response.getEntity().getContent()));
+
+				StringBuffer buffer = new StringBuffer("");
+				String line = "";
+				String NL = System.getProperty("line.separator");
+
+				while ((line = inStream.readLine()) != null) {
+					buffer.append(line + NL);
+				}
+
+				inStream.close();
+				result = buffer.toString();			
+				progress.dismiss();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
+				progress.dismiss();
+			} finally {
+				progress.dismiss();
+				if (inStream != null) {
+					try {
+						inStream.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
 			}
 
-			// making request
-			try {
-				HttpResponse httpResponse = httpClient.execute(httpPost);
-				response = EntityUtils.toString(httpResponse.getEntity());
-				// write response to log
-				Log.d("Http Post Response:", response.toString());
-				progress.dismiss();
-				EventBus.getDefault().post(new AlphaListUpdateEvent());
-			} catch (ClientProtocolException e) {
-				// Log exception
-				e.printStackTrace();
-				progress.dismiss();
-			} catch (IOException e) {
-				// Log exception
-				e.printStackTrace();
-				progress.dismiss();
-			}
-			return response;
+			return result;
 		}
 
 		protected void onPostExecute(String response) {
