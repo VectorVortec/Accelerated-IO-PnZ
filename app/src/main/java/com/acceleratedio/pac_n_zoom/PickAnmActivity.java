@@ -96,9 +96,9 @@ public class PickAnmActivity extends Activity {
 		progress = ProgressDialog.show(this, "Loading the matching animations", "dialog message", true);
 		EventBus.getDefault().register(this);
 		req_str = getIntent().getExtras().getString("requestString").trim();
-        mod_str = getIntent().getExtras().getString("mode").trim();
+		mod_str = getIntent().getExtras().getString("mode").trim();
 		MakePostRequest get_tags = new MakePostRequest();
-    	get_tags.execute(req_str);
+		get_tags.execute(req_str);
 		searchEditText = (EditText) findViewById(R.id.ed_tags);
 
 		searchEditText.setOnClickListener(new View.OnClickListener() {
@@ -133,7 +133,7 @@ public class PickAnmActivity extends Activity {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-				if (mod_str == "animation") {
+				if (mod_str.equals("animation")) {
 					Intent intent = new Intent(PickAnmActivity.this, com.acceleratedio.pac_n_zoom.AnimActivity.class);
 					intent.putExtra("position", position);
 					startActivity(intent);

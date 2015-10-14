@@ -99,6 +99,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 public class AnimActivity extends Activity {
   public static LoadSVG.SVGData svg_data;
 	ArrayList<ImageView> anmViews;
+	public static String bgOfsX;
+	public static String bgOfsY;
 	public static String orgnlImageWdth;
 	public static String orgnlImageHght;
 	private int frm_mbr;
@@ -220,6 +222,8 @@ public class AnimActivity extends Activity {
 					pointerIndex = MotionEventCompat.getActionIndex(event); 
 					end_hrz = (int) MotionEventCompat.getX(event, pointerIndex);
 					end_vrt = (int) MotionEventCompat.getY(event, pointerIndex);
+					bgOfsX = Float.toString(orgnlImageView.getX());
+					bgOfsY = Float.toString(orgnlImageView.getY());
 				}
 
 				rel_anm_lo.invalidate();

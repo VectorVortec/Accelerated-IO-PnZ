@@ -45,25 +45,23 @@ public class SelectImageActivity extends Activity implements OnClickListener {
 	
 	// GUI components
 	private Button button;	// The button that selects the picture
-    private Button vvid;
-    private Button btn_anm;
-    private ImageView image;// ImageView
-    private RelativeLayout mainLayout; // Parent layout
-    public static String orgFil;
+	private Button vvid;
+	private Button btn_anm;
+	private ImageView image;// ImageView
+	private RelativeLayout mainLayout; // Parent layout
+	public static String orgFil;
 	Bitmap orgBmp;
 
-
-
-    @Override
+  @Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_select_image);
 		button = (Button) findViewById(R.id.button); // Find references to the GUI objects
 		image = (ImageView) findViewById(R.id.image);
-        vvid = (Button) findViewById(R.id.vvid);
-        vvid.setOnClickListener(this); // Set button's onClick listener object.
+		vvid = (Button) findViewById(R.id.vvid);
+		vvid.setOnClickListener(this); // Set button's onClick listener object.
 		button.setOnClickListener(this); // Set button's onClick listener object.
-     	}
+  }
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -92,18 +90,13 @@ public class SelectImageActivity extends Activity implements OnClickListener {
       // At the end remember to close the cursor or you will end with the RuntimeException!
       cursor.close();
 
-		//call the main layout from xml
+			//call the main layout from xml
 	    mainLayout = (RelativeLayout) findViewById(R.id.main_layout_id);
-
-            View anm_btn_view = getLayoutInflater().inflate(R.layout.add_anm_btn, mainLayout, false);
-            mainLayout.addView(anm_btn_view); //add the view to the main layout
-            btn_anm = (Button) findViewById(R.id.btn_anm);
-            btn_anm.setOnClickListener(this);
-
-
-
-
-
+			View anm_btn_view = getLayoutInflater().inflate(R.layout.add_anm_btn, mainLayout, false);
+			mainLayout.addView(anm_btn_view); //add the view to the main layout
+			((Button) vvid).setVisibility(View.GONE);
+			btn_anm = (Button) findViewById(R.id.btn_anm);
+			btn_anm.setOnClickListener(this);
 		}
 	}
 
@@ -124,27 +117,24 @@ public class SelectImageActivity extends Activity implements OnClickListener {
 				
 				break;
 
-
-
-
-            case R.id.vvid:
-                mainLayout = (RelativeLayout) findViewById(R.id.main_layout_id);
-                ((RelativeLayout) mainLayout).removeAllViews();
-                Intent itent = new Intent(SelectImageActivity.this, PickAnmActivity.class);
-                itent.putExtra("requestString", " ");
-                itent.putExtra("mode", "video");
-                itent.setClassName("com.acceleratedio.pac_n_zoom", "com.acceleratedio.pac_n_zoom.PickAnmActivity");
-                startActivity(itent);
+			case R.id.vvid:
+				mainLayout = (RelativeLayout) findViewById(R.id.main_layout_id);
+				((RelativeLayout) mainLayout).removeAllViews();
+				Intent itent = new Intent(SelectImageActivity.this, PickAnmActivity.class);
+				itent.putExtra("requestString", " ");
+				itent.putExtra("mode", "video");
+				itent.setClassName("com.acceleratedio.pac_n_zoom", "com.acceleratedio.pac_n_zoom.PickAnmActivity");
+				startActivity(itent);
 				break;
 
-            case R.id.btn_anm:
-
-                ((RelativeLayout) mainLayout).removeAllViews();
-                orgBmp.recycle();
-                Intent intent = new Intent(SelectImageActivity.this, PickAnmActivity.class);
-                intent.putExtra("requestString", "animation");
-                intent.setClassName("com.acceleratedio.pac_n_zoom", "com.acceleratedio.pac_n_zoom.PickAnmActivity");
-                startActivity(intent);
+			case R.id.btn_anm:
+				((RelativeLayout) mainLayout).removeAllViews();
+				orgBmp.recycle();
+				Intent intent = new Intent(SelectImageActivity.this, PickAnmActivity.class);
+				intent.putExtra("requestString", " ");
+				intent.putExtra("mode", "animation");
+				intent.setClassName("com.acceleratedio.pac_n_zoom", "com.acceleratedio.pac_n_zoom.PickAnmActivity");
+				startActivity(intent);
 		}
 	}
 }
