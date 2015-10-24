@@ -7,6 +7,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -28,7 +29,10 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -46,7 +50,6 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 	SurfaceHolder surfaceHolder;
 	boolean pausing = false;;
 	public static ProgressDialog progress;
-	public static String vidFileName;
 
 	/** Called when the activity is first created. */
 	@Override
@@ -72,6 +75,8 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
   public class MakePostRequest extends AsyncTask<String, Void, String> {
     @Override
     protected String doInBackground(String... urls) {
+			String vidFileName;
+			InputStream in = null;
 			String result = "fail";
 			int position = getIntent().getIntExtra("position", -1);
 			vidFileName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".mp4";
@@ -85,7 +90,7 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 				HttpClient httpClient = new DefaultHttpClient();
 				HttpGet httpRequest = new HttpGet(httpAddrs);
 				HttpResponse response = httpClient.execute(httpRequest);
-				InputStream in = response.getEntity().getContent();
+				in = response.getEntity().getContent();
 
 				File file = new File(dir, "/" + vidFileName); // Instantiate the file class
 				FileOutputStream f = new FileOutputStream(file); // Open the file
@@ -117,9 +122,9 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 			return result;
 		}
 
-		protected void onPostExecute() {
-			super.onPostExecute();
-     	dsply_video();
+		protected void onPostExecute(String vidFileName) {
+			super.onPostExecute(vidFileName);
+     	dsply_video(vidFileName);
 		}
 	}
 	
