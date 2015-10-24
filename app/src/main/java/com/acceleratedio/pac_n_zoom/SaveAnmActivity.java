@@ -239,8 +239,6 @@ public class SaveAnmActivity extends Activity implements View.OnClickListener {
 				.addFormDataPart("animname", AnimActivity.animFileName)
 				.addFormDataPart("bgwdth", AnimActivity.orgnlImageWdth)
 				.addFormDataPart("bghght", AnimActivity.orgnlImageHght)
-				.addFormDataPart("bghof", AnimActivity.bgOfsX)
-				.addFormDataPart("bgvof", AnimActivity.bgOfsY)
 				.addFormDataPart("scale", Float.toString(AnimActivity.scaleFactor))
 				.addFormDataPart("thumbnail", "thumbnail.jpg", RequestBody
 					.create(MEDIA_TYPE_JPG, new File(dir + "/thumbnail.jpg")))

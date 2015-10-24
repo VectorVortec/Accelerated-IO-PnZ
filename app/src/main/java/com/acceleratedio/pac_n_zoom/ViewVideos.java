@@ -74,30 +74,30 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
     protected String doInBackground(String... urls) {
 			String result = "fail";
 			int position = getIntent().getIntExtra("position", -1);
-			String vidName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".mp4";
+			vidFileName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".mp4";
 			String httpAddrs = "https://meme.svgvortec.com/Droid/db_rd.php?";
-			httpAddrs += vidName; 
-			BufferedReader inStream = null;
+			httpAddrs += vidFileName; 
+			File sdCard = Environment.getExternalStorageDirectory(); // Find sdcard
+			File dir = new File (sdCard.getAbsolutePath() + "/acceleratedio/pacnzoom");
+			dir.mkdirs();
 
 			try {
 				HttpClient httpClient = new DefaultHttpClient();
 				HttpGet httpRequest = new HttpGet(httpAddrs);
 				HttpResponse response = httpClient.execute(httpRequest);
+				InputStream in = response.getEntity().getContent();
 
-				inStream = new BufferedReader(
-						new InputStreamReader(
-								response.getEntity().getContent()));
+				File file = new File(dir, "/" + vidFileName); // Instantiate the file class
+				FileOutputStream f = new FileOutputStream(file); // Open the file
 
-				StringBuffer buffer = new StringBuffer("");
-				String line = "";
-				String NL = System.getProperty("line.separator");
+				byte[] buffer = new byte[1024];
+				int len1 = 0;
 
-				while ((line = inStream.readLine()) != null) {
-					buffer.append(line + NL);
+				while ((len1 = in.read(buffer)) > 0) {                          
+						f.write(buffer, 0, len1);               
 				}
 
-				inStream.close();
-				result = buffer.toString();			
+				f.close();
 				progress.dismiss();
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
@@ -105,9 +105,9 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 				progress.dismiss();
 			} finally {
 				progress.dismiss();
-				if (inStream != null) {
+				if (in != null) {
 					try {
-						inStream.close();
+						in.close();
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
@@ -117,14 +117,15 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 			return result;
 		}
 
-		protected void onPostExecute(String response) {
-			super.onPostExecute(response);
-     	dsply_video(response);
+		protected void onPostExecute() {
+			super.onPostExecute();
+     	dsply_video();
 		}
 	}
 	
-	private void dsply_video(String tags) {
+	private void dsply_video(String video) {
 		Log.d("dsply_video", "The video is loaded.");
+
 	}
 
 	public void bbaacckk(View view){
