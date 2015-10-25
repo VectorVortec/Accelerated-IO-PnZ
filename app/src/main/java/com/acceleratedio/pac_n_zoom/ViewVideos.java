@@ -59,14 +59,6 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 
 		getWindow().setFormat(PixelFormat.UNKNOWN);
 
-		//Displays a video file.   
-		VideoView mVideoView = (VideoView)findViewById(R.id.vviidd);
-		String uriPath = "com.acceleratedio.pac_n_zoom.ViewVideos";
-		Uri uri = Uri.parse(uriPath);
-		mVideoView.setVideoURI(uri);
-		mVideoView.requestFocus();
-		mVideoView.start();
-
 		progress = ProgressDialog.show(this, "Loading the animation", "dialog message", true);
 		MakePostRequest get_video = new MakePostRequest();
     get_video.execute();
@@ -92,7 +84,7 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 				HttpResponse response = httpClient.execute(httpRequest);
 				in = response.getEntity().getContent();
 
-				File file = new File(dir, "/" + vidFileName); // Instantiate the file class
+				File file = new File(dir, "/file.mp4"); // Instantiate the file class
 				FileOutputStream f = new FileOutputStream(file); // Open the file
 
 				byte[] buffer = new byte[1024];
@@ -131,6 +123,15 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback{
 	private void dsply_video(String video) {
 		Log.d("dsply_video", "The video is loaded.");
 
+		//Displays a video file.   
+		VideoView mVideoView = (VideoView)findViewById(R.id.vviidd);
+		File sdCard = Environment.getExternalStorageDirectory(); // Find sdcard
+		File dir = new File (sdCard.getAbsolutePath() + "/acceleratedio/pacnzoom");
+		File file = new File(dir, "/file.mp4"); // Instantiate the file class
+		Uri uri = Uri.fromFile(file);
+		mVideoView.setVideoURI(uri);
+		mVideoView.requestFocus();
+		mVideoView.start();
 	}
 
 	public void bbaacckk(View view){
