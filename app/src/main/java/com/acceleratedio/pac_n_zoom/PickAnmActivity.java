@@ -79,7 +79,7 @@ import org.apache.http.util.EntityUtils;
 public class PickAnmActivity extends Activity {
 
  	private String LOG_TAG = "PickAnmActivity";
-	private String url = "https://meme.svgvortec.com/Droid/snd_req_tns.php";
+	private String url = "https://www.pnzanimate.me/Droid/snd_req_tns.php";
 	public static String req_str;
     public static String mod_str;
 	EditText searchEditText;
@@ -170,7 +170,7 @@ public class PickAnmActivity extends Activity {
     protected String doInBackground(String... urls) {
       String response = "";
 			DefaultHttpClient httpClient = new DefaultHttpClient();
-			HttpPost httpPost = new HttpPost("https://meme.svgvortec.com/Droid/snd_req_tns.php");
+			HttpPost httpPost = new HttpPost("https://www.pnzanimate.me/Droid/snd_req_tns.php");
 			List<NameValuePair> nameValuePair = new ArrayList<NameValuePair>(4);
 			nameValuePair.add(new BasicNameValuePair("username", "george.washington@wh.gov"));
 			nameValuePair.add(new BasicNameValuePair("password", "ListenToMe"));
@@ -252,7 +252,7 @@ public class PickAnmActivity extends Activity {
 
     	// Trigger the download of the URL asynchronously into the image view.
     	Picasso.with(mContext)
-        .load("https://meme.svgvortec.com/Droid/db_rd.php?"	+ 
+        .load("https://www.pnzanimate.me/Droid/db_rd.php?"	+ 
 					fil_nams[position].replace('/', '?') + ".jpg")
         .placeholder(R.drawable.place_holder)
 				.error(R.drawable.big_problem)

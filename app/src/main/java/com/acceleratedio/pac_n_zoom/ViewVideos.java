@@ -61,7 +61,7 @@ public class ViewVideos extends Activity implements SurfaceHolder.Callback {
         setContentView(R.layout.viewvideo);
         int position = getIntent().getIntExtra("position", -1);
         String vidFileName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".mp4";
-        String httpAddrs = "https://meme.svgvortec.com/Droid/db_rd.php?";
+        String httpAddrs = "https://www.pnzanimate.me/Droid/db_rd.php?";
         httpAddrs += vidFileName;
         mVideoView = (VideoView) findViewById(R.id.vviidd);
 				//mVideoView.setZOrderMediaOverlay(true);
