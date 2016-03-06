@@ -247,7 +247,7 @@ public class SaveAnmActivity extends Activity implements View.OnClickListener {
 				.build();
 
 			Request request = new Request.Builder()
-				.url("https://www.pnzanimate.me/Droid/sav_anm.php")
+				.url("http://www.pnzanimate.me/Droid/sav_anm.php")
 				.post(requestBody)
 				.build();
 

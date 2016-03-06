@@ -363,7 +363,7 @@ public class AnimActivity extends Activity {
 			String result = "fail";
 			int position = getIntent().getIntExtra("position", -1);
 			
-			String httpAddrs = "https://www.pnzanimate.me/Droid/db_rd.php?";
+			String httpAddrs = "http://www.pnzanimate.me/Droid/db_rd.php?";
 			animFileName = PickAnmActivity.fil_nams[position].replace('/', '?') + ".svg";
 			httpAddrs += animFileName; 
 			animFileName = PickAnmActivity.fil_nams[position];
